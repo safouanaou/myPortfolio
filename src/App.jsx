@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { StructureFlowCollection } from '@designcodeio/threeui'
 
 const navItems = [
   { label: 'About', href: '#about' },
@@ -65,6 +66,9 @@ export default function App() {
     <main className="portfolio" id="top">
       <Header />
       <section className="hero" aria-labelledby="hero-title">
+        <div className="hero-shader" aria-hidden="true">
+          <StructureFlowCollection variant="fluid-field" hue={-166} saturation={1.00} brightness={1.25} />
+        </div>
         <div className="hero-copy">
           <Eyebrow>Independent designer / developer</Eyebrow>
           <h1 id="hero-title">WEB<br /><em>DESIGNER</em></h1>
@@ -76,11 +80,14 @@ export default function App() {
         </div>
         <div className="hero-visual" aria-label="Portrait of Safouan">
           <div className="visual-orbit orbit-one" /><div className="visual-orbit orbit-two" /><div className="portrait-disc" />
-          <div className="portrait-frame"><img src="/portrait.png" alt="Safouan smiling in a black shirt" /></div>
+          <div className="portrait-frame">
+            <img className="portrait-image portrait-body" src="/portrait.png" alt="" aria-hidden="true" />
+            <img className="portrait-image portrait-head" src="/portrait.png" alt="Safouan smiling in a black shirt" />
+          </div>
           <p className="visual-note">Based in Belgium<br />Working worldwide</p><span className="visual-number">01</span>
         </div>
+        <div className="hero-footer"><span>Scroll to explore</span><span className="footer-rule" /><span>© 2026</span></div>
       </section>
-      <div className="hero-footer"><span>Scroll to explore</span><span className="footer-rule" /><span>© 2026</span></div>
       <section className="about-section" id="about">
         <div className="about-heading">
           <Eyebrow>A little more about me</Eyebrow>
