@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { StructureFlowCollection } from '@designcodeio/threeui'
 
 const navItems = [
@@ -61,7 +61,48 @@ function Header() {
 
 const Eyebrow = ({ children }) => <p className="eyebrow"><span className="eyebrow-dot" />{children}</p>
 
+function FluidField() {
+  return (
+    <div className="section-shader" aria-hidden="true">
+      <StructureFlowCollection variant="fluid-field" hue={-166} saturation={1.00} brightness={1.25} />
+    </div>
+  )
+}
+
 export default function App() {
+  const aboutRef = useRef(null)
+
+  useEffect(() => {
+    let targetProgress = 0
+    let currentProgress = 0
+    let frameId
+
+    const updateAboutProgress = () => {
+      if (!aboutRef.current) return
+      const { top, height } = aboutRef.current.getBoundingClientRect()
+      const viewport = window.innerHeight
+      const start = viewport * 0.92
+      const end = -height * 0.5
+      targetProgress = Math.min(1, Math.max(0, (start - top) / (start - end)))
+    }
+
+    const easeAboutProgress = () => {
+      currentProgress += (targetProgress - currentProgress) * 0.055
+      if (aboutRef.current) aboutRef.current.style.setProperty('--about-progress', currentProgress.toFixed(3))
+      frameId = window.requestAnimationFrame(easeAboutProgress)
+    }
+
+    updateAboutProgress()
+    easeAboutProgress()
+    window.addEventListener('scroll', updateAboutProgress, { passive: true })
+    window.addEventListener('resize', updateAboutProgress)
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.removeEventListener('scroll', updateAboutProgress)
+      window.removeEventListener('resize', updateAboutProgress)
+    }
+  }, [])
+
   return (
     <main className="portfolio" id="top">
       <Header />
@@ -88,7 +129,7 @@ export default function App() {
         </div>
         <div className="hero-footer"><span>Scroll to explore</span><span className="footer-rule" /><span>© 2026</span></div>
       </section>
-      <section className="about-section" id="about">
+      <section className="about-section" id="about" ref={aboutRef}>
         <div className="about-heading">
           <Eyebrow>A little more about me</Eyebrow>
           <h2>Design that feels<br /><em>like you.</em></h2>
@@ -105,6 +146,7 @@ export default function App() {
         </div>
       </section>
       <section className="work-section" id="work">
+        <FluidField />
         <div className="work-heading">
           <Eyebrow>Selected work</Eyebrow>
           <h2>Coming into<br /><em>focus.</em></h2>
@@ -140,7 +182,12 @@ export default function App() {
           ))}
         </div>
       </section>
-      <section className="contact-section" id="contact"><Eyebrow>Have a project in mind?</Eyebrow><h2>Let’s make<br /><em>something good.</em></h2><a className="button button-primary" href="mailto:contact@safouan.design">Start a conversation <ArrowIcon /></a></section>
+      <section className="contact-section" id="contact">
+        <FluidField />
+        <Eyebrow>Have a project in mind?</Eyebrow>
+        <h2>Let’s make<br /><em>something good.</em></h2>
+        <a className="button button-primary" href="mailto:contact@safouan.design">Start a conversation <ArrowIcon /></a>
+      </section>
     </main>
   )
 }
