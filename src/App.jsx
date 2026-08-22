@@ -5,7 +5,15 @@ const navItems = [
   { label: 'About', href: '#about' },
   { label: 'Selected work', href: '#work' },
   { label: 'Services', href: '#services' },
+  { label: 'Process', href: '#process' },
   { label: 'Contact', href: '#contact' },
+]
+
+const processSteps = [
+  { number: '01', title: 'Discover', copy: 'We clarify the goal, audience and atmosphere your business needs to communicate.' },
+  { number: '02', title: 'Shape', copy: 'I turn the direction into a clear structure, visual language and confident concept.' },
+  { number: '03', title: 'Build', copy: 'The experience comes to life through responsive design, careful detail and useful interaction.' },
+  { number: '04', title: 'Launch', copy: 'We test, refine and hand over a polished presence ready to move your business forward.' },
 ]
 
 const serviceBundles = [
@@ -59,6 +67,85 @@ function Header() {
   )
 }
 
+function Footer() {
+  const waveRef = useRef(null)
+
+  useEffect(() => {
+    let lastScroll = window.scrollY
+    let lastTime = performance.now()
+    let targetBounce = 0
+    let bounce = 0
+    let frameId
+
+    const updateScrollSpeed = () => {
+      const now = performance.now()
+      const elapsed = Math.max(16, now - lastTime)
+      const speed = Math.abs(window.scrollY - lastScroll) / elapsed
+      targetBounce = Math.min(1, speed * 0.32)
+      lastScroll = window.scrollY
+      lastTime = now
+    }
+
+    const animateWave = () => {
+      bounce += (targetBounce - bounce) * 0.16
+      targetBounce *= 0.9
+      if (waveRef.current) {
+        const curve = (156 * bounce).toFixed(2)
+        waveRef.current.setAttribute('d', `M0-0.3C0-0.3,464,${curve},1139,${curve}S2278-0.3,2278-0.3V683H0V-0.3z`)
+      }
+      frameId = window.requestAnimationFrame(animateWave)
+    }
+
+    window.addEventListener('scroll', updateScrollSpeed, { passive: true })
+    animateWave()
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.removeEventListener('scroll', updateScrollSpeed)
+    }
+  }, [])
+
+  return (
+    <footer className="site-footer">
+      <svg className="footer-wave" preserveAspectRatio="none" viewBox="0 0 2278 683" aria-hidden="true">
+        <defs>
+          <linearGradient id="footer-gradient" x1="0" y1="0" x2="2278" y2="683" gradientUnits="userSpaceOnUse">
+            <stop offset=".15" stopColor="#162316" />
+            <stop offset=".58" stopColor="#2d471d" />
+            <stop offset=".9" stopColor="#8ba52f" />
+          </linearGradient>
+        </defs>
+        <path ref={waveRef} className="footer-wave-path" fill="url(#footer-gradient)" d="M0-0.3C0-0.3,464,0,1139,0S2278-0.3,2278-0.3V683H0V-0.3z" />
+      </svg>
+      <div className="footer-grain" aria-hidden="true" />
+      <div className="footer-content">
+        <div className="footer-grid">
+          <div className="footer-brand">
+            <a className="footer-mark" href="#top" aria-label="Safouan home">S<span>/</span></a>
+            <p>Independent designer and developer creating thoughtful digital experiences for businesses with something to say.</p>
+          </div>
+          <nav className="footer-nav" aria-label="Footer navigation">
+            <span className="footer-label">Explore</span>
+            <a href="#about">About</a>
+            <a href="#work">Selected work</a>
+            <a href="#services">Services</a>
+            <a href="#process">Process</a>
+          </nav>
+          <div className="footer-contact">
+            <span className="footer-label">Get in touch</span>
+            <a href="mailto:aouezgharsafouan@gmail.com">aouezgharsafouan@gmail.com <span>↗</span></a>
+            <p>Ghent, Belgium<br />Working worldwide</p>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <span>© 2026 Safouan Aouezghar</span>
+          <span>English · Français · العربية</span>
+          <a href="#top">Back to top ↗</a>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
 const Eyebrow = ({ children }) => <p className="eyebrow"><span className="eyebrow-dot" />{children}</p>
 
 function FluidField() {
@@ -71,6 +158,17 @@ function FluidField() {
 
 export default function App() {
   const aboutRef = useRef(null)
+
+  const handleContactSubmit = (event) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const name = formData.get('name')
+    const email = formData.get('email')
+    const project = formData.get('project')
+    const subject = `Project enquiry from ${name}`
+    const body = `Name: ${name}\nEmail: ${email}\n\nProject details:\n${project}`
+    window.location.href = `mailto:aouezgharsafouan@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
 
   useEffect(() => {
     let targetProgress = 0
@@ -182,12 +280,47 @@ export default function App() {
           ))}
         </div>
       </section>
-      <section className="contact-section" id="contact">
+      <section className="process-section" id="process" aria-labelledby="process-title">
         <FluidField />
-        <Eyebrow>Have a project in mind?</Eyebrow>
-        <h2>Let’s make<br /><em>something good.</em></h2>
-        <a className="button button-primary" href="mailto:contact@safouan.design">Start a conversation <ArrowIcon /></a>
+        <div className="process-heading">
+          <Eyebrow>A clear way forward</Eyebrow>
+          <h2 id="process-title">From first idea<br /><em>to launch.</em></h2>
+          <p>A thoughtful process keeps the work focused, collaborative and moving in the right direction.</p>
+        </div>
+        <div className="process-list">
+          {processSteps.map((step) => (
+            <article className="process-step" key={step.number}>
+              <span className="process-number">{step.number}</span>
+              <div className="process-step-copy">
+                <h3>{step.title}</h3>
+                <p>{step.copy}</p>
+              </div>
+              <span className="process-arrow" aria-hidden="true">↗</span>
+            </article>
+          ))}
+        </div>
       </section>
+      <section className="contact-section" id="contact">
+        <div className="contact-layout">
+          <div className="contact-copy">
+            <Eyebrow>Have a project in mind?</Eyebrow>
+            <h2>Let’s make<br /><em>work that matters.</em></h2>
+            <p>Tell me what you’re building, where you’re headed and what you need help making clearer.</p>
+            <a className="contact-email" href="mailto:aouezgharsafouan@gmail.com">aouezgharsafouan@gmail.com <span>↗</span></a>
+          </div>
+          <form className="contact-form" onSubmit={handleContactSubmit}>
+            <label htmlFor="contact-name">Your name</label>
+            <input id="contact-name" name="name" type="text" autoComplete="name" placeholder="Name" required />
+            <label htmlFor="contact-email">Your email</label>
+            <input id="contact-email" name="email" type="email" autoComplete="email" placeholder="you@company.com" required />
+            <label htmlFor="contact-project">Tell me about the project</label>
+            <textarea id="contact-project" name="project" rows="4" placeholder="A few words about what you need..." required />
+            <button className="button button-primary" type="submit">Start a conversation <ArrowIcon /></button>
+            <p className="form-note">This opens your email app with the message ready to send.</p>
+          </form>
+        </div>
+      </section>
+      <Footer />
     </main>
   )
 }
