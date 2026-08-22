@@ -218,10 +218,9 @@ export default function App() {
           </div>
         </div>
         <div className="hero-visual" aria-label="Portrait of Safouan">
-          <div className="visual-orbit orbit-one" /><div className="visual-orbit orbit-two" /><div className="portrait-disc" />
-          <div className="portrait-frame">
-            <img className="portrait-image portrait-body" src="/portrait.png" alt="" aria-hidden="true" />
-            <img className="portrait-image portrait-head" src="/portrait.png" alt="Safouan smiling in a black shirt" />
+          <div className="visual-orbit orbit-one" /><div className="visual-orbit orbit-two" />
+          <div className="portrait-disc">
+            <img className="portrait-image" src="/portrait.png" alt="Safouan smiling in a black shirt" />
           </div>
           <p className="visual-note">Based in Belgium<br />Working worldwide</p><span className="visual-number">01</span>
         </div>
