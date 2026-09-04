@@ -51,25 +51,12 @@ function ArrowIcon() {
   return <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3M5 3h8v8" /></svg>
 }
 
-function ThemeToggle({ isLight, onToggle }) {
-  return (
-    <label className="theme-switch" aria-label={isLight ? 'Switch to dark mode' : 'Switch to light mode'}>
-      <input type="checkbox" checked={isLight} onChange={onToggle} />
-      <span className="theme-slider">
-        <span className="theme-sun" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg></span>
-        <span className="theme-moon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 15.7A8.5 8.5 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z" /></svg></span>
-      </span>
-    </label>
-  )
-}
-
-function Header({ isLight, onToggle }) {
+function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <header className="site-header">
       <a className="wordmark" href="#top" aria-label="Safouan home">S<span>/</span></a>
-      <ThemeToggle isLight={isLight} onToggle={onToggle} />
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen((open) => !open)}>
         <span>Menu</span><span className={`menu-icon ${menuOpen ? 'is-open' : ''}`} aria-hidden="true"><i /><i /></span>
       </button>
@@ -171,7 +158,6 @@ function FluidField() {
 
 export default function App() {
   const aboutRef = useRef(null)
-  const [isLight, setIsLight] = useState(false)
 
   const handleContactSubmit = (event) => {
     event.preventDefault()
@@ -216,8 +202,8 @@ export default function App() {
   }, [])
 
   return (
-    <main className={`portfolio ${isLight ? 'theme-light' : ''}`} id="top">
-      <Header isLight={isLight} onToggle={() => setIsLight((light) => !light)} />
+    <main className="portfolio" id="top">
+      <Header />
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-shader" aria-hidden="true">
           <StructureFlowCollection variant="fluid-field" hue={-166} saturation={1.00} brightness={1.25} />
