@@ -1,5 +1,15 @@
 import { useEffect, useRef } from "react";
-import * as THREE from "three";
+import {
+  Color,
+  Mesh,
+  OrthographicCamera,
+  PlaneGeometry,
+  Scene,
+  ShaderMaterial,
+  Vector2,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 // Shader adapted from the user-supplied React Bits GridScan component.
 const vert = `
 varying vec2 vUv;
@@ -283,20 +293,20 @@ export default function GridScan() {
     if (!el) return;
     let renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
+      renderer = new WebGLRenderer({ alpha: true, antialias: false });
     } catch {
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     const values = {
-      iResolution: new THREE.Vector3(),
+      iResolution: new Vector3(),
       iTime: 0,
-      uSkew: new THREE.Vector2(),
+      uSkew: new Vector2(),
       uTilt: 0,
       uYaw: 0,
       uLineThickness: 0.8,
-      uLinesColor: new THREE.Color("#9bb9ff"),
-      uScanColor: new THREE.Color("#a6dfff"),
+      uLinesColor: new Color("#9bb9ff"),
+      uScanColor: new Color("#a6dfff"),
       uGridScale: 0.18,
       uLineStyle: 0,
       uLineJitter: 0.04,
@@ -316,7 +326,7 @@ export default function GridScan() {
     const uniforms = Object.fromEntries(
       Object.entries(values).map(([key, value]) => [key, { value }]),
     );
-    const material = new THREE.ShaderMaterial({
+    const material = new ShaderMaterial({
       uniforms,
       vertexShader: vert,
       fragmentShader: frag,
@@ -324,10 +334,10 @@ export default function GridScan() {
       depthTest: false,
       depthWrite: false,
     });
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const scene = new THREE.Scene();
-    scene.add(new THREE.Mesh(geometry, material));
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const geometry = new PlaneGeometry(2, 2);
+    const scene = new Scene();
+    scene.add(new Mesh(geometry, material));
+    const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     el.appendChild(renderer.domElement);
     const resize = () => {
       const w = el.clientWidth,
@@ -341,7 +351,7 @@ export default function GridScan() {
     let frame = 0,
       visible = false,
       stopped = false;
-    const target = new THREE.Vector2();
+    const target = new Vector2();
     const render = (now) => {
       if (stopped || !visible || document.hidden) {
         frame = 0;

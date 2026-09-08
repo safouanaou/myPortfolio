@@ -225,6 +225,8 @@ const ScrollExpand = ({
         className="scroll-expand__media"
         src={src}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         draggable={false}
       />
     );

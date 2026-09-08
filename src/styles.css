@@ -234,6 +234,10 @@ img {
   inset: 0;
   opacity: 0.2;
   mix-blend-mode: screen;
+  background-image:
+    linear-gradient(rgba(155, 185, 255, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155, 185, 255, 0.2) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 .grid-scan {
   width: 100%;
@@ -1527,3 +1531,45 @@ html:has(.portfolio.reduced-motion) {
   outline-offset: 6px;
 }
 .reduced-motion .atom-home { display: none; }
+
+/* One continuous about → services scroll scene. Static flow is the fallback. */
+.service-atom-origin {
+  display: block;
+  width: 58%;
+  height: 58%;
+}
+.detail-pair .service-atom-origin svg { width: 100%; height: 100%; }
+.detail-pair > .atom-departure { overflow: visible; }
+.atom-departure svg { position: relative; z-index: 8; pointer-events: none; }
+.services-stage { padding: 100px var(--pad); }
+.service-bundle { max-width: 1080px; margin: 0 auto 100px; }
+.service-bundle:last-child { margin-bottom: 0; }
+.service-bundle h2 { font-size: clamp(36px, 6vw, 88px); max-width: 100%; text-wrap: balance; }
+.bundle-details { max-width: 760px; margin-top: 32px; }
+.bundle-audience { max-width: 52ch; color: #c9ccc1; font-size: 17px; }
+.bundle-terms { display: flex; align-items: baseline; gap: 32px; margin: 24px 0; }
+.bundle-terms p { margin: 0; }
+.bundle-terms strong { font-weight: 500; font-size: 32px; font-variant-numeric: tabular-nums; }
+.bundle-terms span { color: #c9ccc1; font-size: 13px; }
+.bundle-details ul { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 32px; padding-left: 18px; margin: 0 0 28px; color: #c9ccc1; font-size: 14px; }
+.bundle-details .text-link { min-height: 44px; }
+.services-animated { height: 700svh; position: relative; }
+.services-animated .services-stage { position: sticky; top: 0; height: 100svh; padding: 0; }
+.services-animated .service-bundle { position: absolute; left: 10%; right: 14%; top: 23%; max-width: none; margin: 0; visibility: hidden; }
+@media (max-width: 760px) {
+  .services-stage { padding: 72px var(--pad); }
+  .service-bundle h2 { font-size: clamp(30px, 7vw, 52px); }
+  .bundle-details { margin-top: 20px; }
+  .bundle-audience { font-size: 14px; }
+  .bundle-terms { display: block; margin: 16px 0; }
+  .bundle-terms strong { font-size: 28px; }
+  .bundle-details ul { grid-template-columns: 1fr; gap: 6px; font-size: 12px; margin-bottom: 18px; }
+  .bundle-details .text-link { font-size: 12px; }
+  .services-animated .service-bundle { left: 7%; right: 14%; top: 20%; }
+}
+@media (max-height: 600px) and (min-width: 761px) {
+  .services-animated .service-bundle { top: 12%; }
+  .service-bundle h2 { font-size: 42px; }
+  .bundle-details { margin-top: 16px; }
+  .bundle-terms { margin: 12px 0; }
+}

@@ -3,6 +3,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import ScrollExpand from "./ScrollExpand";
+import { setupServicesMotion } from "./servicesMotion";
 const GridScan = lazy(() => import("./GridScan"));
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -188,7 +189,7 @@ const mockups = [
     name: "Bar César.",
     type: "Restaurant website · Concept",
     file: "bar-cesar",
-    image: "/projects/bar-cesar.jpg",
+    image: "/projects/bar-cesar.webp",
     alt: "Bar César interior photography featured in the restaurant website concept",
     url: "/projects/bar-cesar/index.html",
     theme: "cesar",
@@ -217,6 +218,7 @@ export default function App() {
   );
   const [quiet, setQuiet] = useState(false);
   const [emailReady, setEmailReady] = useState(false);
+  const [gridReady, setGridReady] = useState(false);
   const reduceMotion = quiet || systemReduced;
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -225,13 +227,28 @@ export default function App() {
     return () => query.removeEventListener("change", update);
   }, []);
   useEffect(() => {
+    if (reduceMotion) {
+      setGridReady(false);
+      return;
+    }
+
+    // Three.js and shader compilation are decorative, so keep them out of the
+    // critical first-paint path. The CSS grid remains visible in the meantime.
+    const timer = window.setTimeout(() => setGridReady(true), 1000);
+    return () => window.clearTimeout(timer);
+  }, [reduceMotion]);
+  useEffect(() => {
     if (reduceMotion) return;
+    let animationCleanup = () => {};
+    const initializeAnimations = () => {
+      if (!root.current) return;
     const splits = [];
+    let cleanupServices = () => {};
     const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
       const textTargets = gsap.utils.toArray(
-        "main h1, main h2, main h3, main p:not(.form-note), .hero-caption > span, .service-name, .footer-top > span"
-      ).filter(el => !el.closest(".scroll-expand__overlay"));
+        "main h1, main h2, main h3, .service-name, .footer-top > span"
+      ).filter(el => !el.closest(".scroll-expand__overlay, .services-section"));
       textTargets.forEach((el) => {
         const display = el.matches("h1, h2, h3, .finale-word, .footer-wordmark, .service-name");
         const accessibleText = el.getAttribute("aria-label") || el.innerText.replace(/\s+/g, " ").trim();
@@ -253,31 +270,10 @@ export default function App() {
           clearProps: "transform,transformOrigin",
         });
       });
-      // Animate remaining text in its existing element so controls and dynamic
-      // React labels keep their original DOM and behavior.
-      const remainingText = new Set();
-      const walker = document.createTreeWalker(root.current, NodeFilter.SHOW_TEXT);
-      while (walker.nextNode()) {
-        const node = walker.currentNode;
-        const el = node.parentElement;
-        if (!node.textContent.trim() || !el || el.closest("svg, .fold-word, .fold-char, .scroll-expand, .skip-link, .footer-wordmark, .finale")) continue;
-        if (!el.querySelector(".fold-char")) remainingText.add(el);
-      }
-      root.current.querySelectorAll("input, textarea").forEach(el => remainingText.add(el));
-      remainingText.forEach(el => {
-        gsap.fromTo(el, { clipPath: "inset(0 100% 0 0)" }, {
-          clipPath: "inset(0 0% 0 0)", duration: 0.7, ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 97%", once: true },
-          clearProps: "clipPath",
-        });
-      });
       gsap.fromTo(".finale > div", { clipPath: "inset(0 100% 0 0)" }, {
         clipPath: "inset(0 0% 0 0)", duration: 0.85, stagger: 0.08,
         ease: "power3.out", clearProps: "clipPath",
         scrollTrigger: { trigger: ".finale", start: "top 95%", once: true },
-      });
-      gsap.from(".hero-portrait", {
-        y: 80, rotation: -6, duration: 1.2, ease: "power4.out",
       });
       gsap.to(".hero-frame", {
         clipPath: "inset(3% 7% 14% 7% round 4px)",
@@ -346,6 +342,7 @@ export default function App() {
           },
         });
       });
+      cleanupServices = setupServicesMotion(root.current);
       const finale = root.current.querySelector(".finale");
       const home = root.current.querySelector(".atom-home");
       const mark = root.current.querySelector(".falling-mark");
@@ -433,13 +430,29 @@ export default function App() {
     const refresh = () => ScrollTrigger.refresh();
     document.fonts.ready.then(refresh);
     window.addEventListener("load", refresh);
-    return () => {
+    animationCleanup = () => {
       window.removeEventListener("load", refresh);
+      cleanupServices();
       mm.revert();
       ctx.revert();
       gsap.killTweensOf(".finale-word");
       gsap.set(".finale-word", { clearProps: "transform" });
       splits.forEach(split => split.revert());
+    };
+    };
+
+    let idleId;
+    let timerId;
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(initializeAnimations, { timeout: 800 });
+    } else {
+      timerId = window.setTimeout(initializeAnimations, 0);
+    }
+
+    return () => {
+      if (idleId) window.cancelIdleCallback(idleId);
+      if (timerId) window.clearTimeout(timerId);
+      animationCleanup();
     };
   }, [reduceMotion]);
 
@@ -464,7 +477,7 @@ export default function App() {
         <section className="hero-track" aria-labelledby="hero-title">
           <div className="hero-frame">
             <div className="hero-grid" aria-hidden="true">
-              {!reduceMotion && (
+              {gridReady && (
                 <Suspense fallback={null}>
                   <GridScan />
                 </Suspense>
@@ -484,7 +497,9 @@ export default function App() {
             </h1>
             <img
               className="hero-portrait"
-              src="/portrait.png"
+              src="/portrait.webp"
+              srcSet="/portrait-720.webp 720w, /portrait.webp 1145w"
+              sizes="(max-width: 760px) 88vw, 56vw"
               alt="Illustrated portrait of Safouan Aouezghar"
               width="1145"
               height="1209"
@@ -546,7 +561,7 @@ export default function App() {
           aria-label="Design detail expanding into a full visual composition"
         >
           <ScrollExpand
-            src="/details-bigger-picture.png"
+            src="/details-bigger-picture.webp"
             alt="Illustrated design workspace with a laptop, colour swatches, stationery and a plant"
             useWindowScroll
             enabled={!reduceMotion}
@@ -647,7 +662,7 @@ export default function App() {
               <Mark />
             </div>
             <img
-              src="/portrait.png"
+              src="/portrait.webp"
               alt="Safouan, independent designer and developer"
               loading="lazy"
               width="1145"
@@ -686,7 +701,7 @@ export default function App() {
             </a>
             <div className="detail-pair">
               <div>
-                <Mark />
+                <span className="service-atom-origin"><Mark /></span>
                 <span>Considered by design.</span>
               </div>
               <div>
@@ -697,50 +712,23 @@ export default function App() {
           </div>
         </section>
 
-        <section className="services-section section-pad" id="services">
-          <div className="services-heading">
-            <h2 className="rise">
-              <span>
-                Good together.
-                <br />
-                <em>Better, by design.</em>
-              </span>
-            </h2>
-            <p>
-              One creative partner, from direction to delivery. Choose the right
-              starting point for your business.
-            </p>
-          </div>
-          <div className="services-list">
+        <section className="services-section" id="services" aria-label="Services">
+          <div className="services-stage">
             {serviceBundles.map((bundle) => (
-              <details
-                className="service-row"
-                key={bundle.number}
-                onToggle={() => ScrollTrigger.refresh()}
-              >
-                <summary>
-                  <span className="service-name">{bundle.name}</span>
-                  <span className="service-price">From {bundle.price}</span>
-                  <span className="service-plus" aria-hidden="true" />
-                </summary>
-                <div className="service-content">
-                  <p>{bundle.audience}</p>
-                  <ul>
-                    {bundle.features.map((feature) => (
-                      <li key={feature}>{feature}</li>
-                    ))}
-                  </ul>
-                  <div>
-                    <span className="timeline">
-                      Typical timeline: {bundle.timeline}
-                    </span>
-                    <a className="text-link" href="#contact">
-                      {bundle.cta}
-                      <Arrow />
-                    </a>
+              <article className="service-bundle" key={bundle.number}>
+                <h2>{bundle.name}</h2>
+                <div className="bundle-details">
+                  <p className="bundle-audience">{bundle.audience}</p>
+                  <div className="bundle-terms">
+                    <p>From <strong>{bundle.price}</strong></p>
+                    <span>Typical timeline: {bundle.timeline}</span>
                   </div>
+                  <ul>
+                    {bundle.features.map(feature => <li key={feature}>{feature}</li>)}
+                  </ul>
+                  <a className="text-link" href="#contact">{bundle.cta}<Arrow /></a>
                 </div>
-              </details>
+              </article>
             ))}
           </div>
         </section>
