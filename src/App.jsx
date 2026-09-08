@@ -1,325 +1,911 @@
-import { useEffect, useRef, useState } from 'react'
-import { StructureFlowCollection } from '@designcodeio/threeui'
-
-const navItems = [
-  { label: 'About', href: '#about' },
-  { label: 'Selected work', href: '#work' },
-  { label: 'Services', href: '#services' },
-  { label: 'Process', href: '#process' },
-  { label: 'Contact', href: '#contact' },
-]
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
+import ScrollExpand from "./ScrollExpand";
+const GridScan = lazy(() => import("./GridScan"));
+gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const processSteps = [
-  { number: '01', title: 'Discover', copy: 'We clarify the goal, audience and atmosphere your business needs to communicate.' },
-  { number: '02', title: 'Shape', copy: 'I turn the direction into a clear structure, visual language and confident concept.' },
-  { number: '03', title: 'Build', copy: 'The experience comes to life through responsive design, careful detail and useful interaction.' },
-  { number: '04', title: 'Launch', copy: 'We test, refine and hand over a polished presence ready to move your business forward.' },
-]
+  {
+    number: "01",
+    title: "Discover",
+    copy: "We clarify the goal, audience and atmosphere your business needs to communicate.",
+  },
+  {
+    number: "02",
+    title: "Shape",
+    copy: "I turn the direction into a clear structure, visual language and confident concept.",
+  },
+  {
+    number: "03",
+    title: "Build",
+    copy: "The experience comes to life through responsive design, careful detail and useful interaction.",
+  },
+  {
+    number: "04",
+    title: "Launch",
+    copy: "We test, refine and hand over a polished presence ready to move your business forward.",
+  },
+];
 
 const serviceBundles = [
   {
-    number: '01',
-    name: 'Essential Presence',
-    audience: 'For a new or small business that needs one strong, credible place online.',
-    price: '€750',
-    timeline: '2–3 weeks',
-    cta: 'Enquire about Essential',
-    features: ['Custom one-page website', 'Responsive desktop and mobile design', 'Focused typography and colour direction', 'Contact form, map and primary action'],
+    number: "01",
+    name: "Essential Presence",
+    audience:
+      "For a new or small business that needs one strong, credible place online.",
+    price: "€750",
+    timeline: "2–3 weeks",
+    cta: "Enquire about Essential",
+    features: [
+      "Custom one-page website",
+      "Responsive desktop and mobile design",
+      "Focused typography and colour direction",
+      "Contact form, map and primary action",
+    ],
   },
   {
-    number: '02',
-    name: 'Signature Experience',
-    audience: 'For an established business ready for a more complete and distinctive presence.',
-    price: '€1,500',
-    timeline: '4–6 weeks',
-    cta: 'Enquire about Signature',
+    number: "02",
+    name: "Signature Experience",
+    audience:
+      "For an established business ready for a more complete and distinctive presence.",
+    price: "€1,500",
+    timeline: "4–6 weeks",
+    cta: "Enquire about Signature",
     featured: true,
-    features: ['Custom website with up to five pages', 'Visual direction for type, colour, imagery and voice', 'Print or digital menu or service list', 'Enquiry or reservation integration'],
+    features: [
+      "Custom website with up to five pages",
+      "Visual direction for type, colour, imagery and voice",
+      "Print or digital menu or service list",
+      "Enquiry or reservation integration",
+    ],
   },
   {
-    number: '03',
-    name: 'Complete Brand Presence',
-    audience: 'For a launch or repositioning that needs one coherent system across screen, print and place.',
-    price: '€2,500',
-    timeline: 'To be scoped',
-    cta: 'Enquire about Complete',
-    features: ['Brand positioning and visual identity', 'Custom website with up to eight pages', 'Compact guidelines and reusable asset library', 'Three collateral items'],
+    number: "03",
+    name: "Complete Brand Presence",
+    audience:
+      "For a launch or repositioning that needs one coherent system across screen, print and place.",
+    price: "€2,500",
+    timeline: "To be scoped",
+    cta: "Enquire about Complete",
+    features: [
+      "Brand positioning and visual identity",
+      "Custom website with up to eight pages",
+      "Compact guidelines and reusable asset library",
+      "Three collateral items",
+    ],
   },
-]
+];
 
-function ArrowIcon() {
-  return <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3M5 3h8v8" /></svg>
+function Arrow({ down = false }) {
+  return (
+    <svg
+      className={down ? "arrow arrow-down" : "arrow"}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path d="M5 19 19 5M5 5h14v14" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
 }
-
-function Header() {
-  const [menuOpen, setMenuOpen] = useState(false)
-
+function Mark({ className = "" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 100 100"
+      fill="none"
+      aria-hidden="true"
+    >
+      {Array.from({ length: 8 }, (_, i) => (
+        <ellipse
+          key={i}
+          cx="50"
+          cy="50"
+          rx="15"
+          ry="45"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          transform={`rotate(${i * 22.5} 50 50)`}
+        />
+      ))}
+    </svg>
+  );
+}
+function Header({ quiet, setQuiet }) {
+  const [open, setOpen] = useState(false);
+  const menuButton = useRef(null);
+  useEffect(() => {
+    if (!open || quiet) return;
+    ScrollTrigger.refresh();
+    const reveal = gsap.fromTo(".main-nav a, .main-nav button",
+      { clipPath: "inset(0 100% 0 0)" },
+      { clipPath: "inset(0 0% 0 0)", duration: 0.5, stagger: 0.06, ease: "power3.out", clearProps: "clipPath" });
+    return () => reveal.kill();
+  }, [open, quiet]);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [open]);
   return (
     <header className="site-header">
-      <a className="wordmark" href="#top" aria-label="Safouan home">S<span>/</span></a>
-      <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen((open) => !open)}>
-        <span>Menu</span><span className={`menu-icon ${menuOpen ? 'is-open' : ''}`} aria-hidden="true"><i /><i /></span>
+      <a href="#top" className="wordmark" aria-label="Safouan home">
+        safouan
+      </a>
+      <span className="header-role">
+        Independent design
+        <br />& development
+      </span>
+      <button
+        ref={menuButton}
+        className="menu-toggle"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls="main-nav"
+      >
+        {open ? "Close" : "Menu"}{" "}
+        <span aria-hidden="true">{open ? "−" : "+"}</span>
       </button>
-      <nav id="main-navigation" className={`main-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
-        {navItems.map((item, index) => <a href={item.href} key={item.label} onClick={() => setMenuOpen(false)}><span className="nav-index">0{index + 1}</span>{item.label}</a>)}
+      <nav
+        id="main-nav"
+        className={open ? "main-nav is-open" : "main-nav"}
+        aria-label="Main navigation"
+      >
+        {[
+          ["Work", "work"],
+          ["About", "about"],
+          ["Services", "services"],
+          ["Let’s talk", "contact"],
+        ].map(([name, id]) => (
+          <a key={id} href={`#${id}`} onClick={() => setOpen(false)}>
+            {name}
+            {id === "contact" && <Arrow />}
+          </a>
+        ))}
+        <button
+          className="motion-toggle"
+          aria-pressed={quiet}
+          onClick={() => setQuiet(!quiet)}
+        >
+          {quiet ? "Motion off" : "Motion on"}
+          <span className="toggle-indicator" />
+        </button>
       </nav>
     </header>
-  )
+  );
 }
 
-function Footer() {
-  const waveRef = useRef(null)
-
-  useEffect(() => {
-    let lastScroll = window.scrollY
-    let lastTime = performance.now()
-    let targetBounce = 0
-    let bounce = 0
-    let frameId
-
-    const updateScrollSpeed = () => {
-      const now = performance.now()
-      const elapsed = Math.max(16, now - lastTime)
-      const speed = Math.abs(window.scrollY - lastScroll) / elapsed
-      targetBounce = Math.min(1, speed * 0.32)
-      lastScroll = window.scrollY
-      lastTime = now
-    }
-
-    const animateWave = () => {
-      bounce += (targetBounce - bounce) * 0.16
-      targetBounce *= 0.9
-      if (waveRef.current) {
-        const curve = (156 * bounce).toFixed(2)
-        waveRef.current.setAttribute('d', `M0-0.3C0-0.3,464,${curve},1139,${curve}S2278-0.3,2278-0.3V683H0V-0.3z`)
-      }
-      frameId = window.requestAnimationFrame(animateWave)
-    }
-
-    window.addEventListener('scroll', updateScrollSpeed, { passive: true })
-    animateWave()
-    return () => {
-      window.cancelAnimationFrame(frameId)
-      window.removeEventListener('scroll', updateScrollSpeed)
-    }
-  }, [])
-
-  return (
-    <footer className="site-footer">
-      <svg className="footer-wave" preserveAspectRatio="none" viewBox="0 0 2278 683" aria-hidden="true">
-        <defs>
-          <linearGradient id="footer-gradient" x1="0" y1="0" x2="2278" y2="683" gradientUnits="userSpaceOnUse">
-            <stop offset=".15" stopColor="#162316" />
-            <stop offset=".58" stopColor="#2d471d" />
-            <stop offset=".9" stopColor="#8ba52f" />
-          </linearGradient>
-        </defs>
-        <path ref={waveRef} className="footer-wave-path" fill="url(#footer-gradient)" d="M0-0.3C0-0.3,464,0,1139,0S2278-0.3,2278-0.3V683H0V-0.3z" />
-      </svg>
-      <div className="footer-grain" aria-hidden="true" />
-      <div className="footer-content">
-        <div className="footer-grid">
-          <div className="footer-brand">
-            <a className="footer-mark" href="#top" aria-label="Safouan home">S<span>/</span></a>
-            <p>Independent designer and developer creating thoughtful digital experiences for businesses with something to say.</p>
-          </div>
-          <nav className="footer-nav" aria-label="Footer navigation">
-            <span className="footer-label">Explore</span>
-            <a href="#about">About</a>
-            <a href="#work">Selected work</a>
-            <a href="#services">Services</a>
-            <a href="#process">Process</a>
-          </nav>
-          <div className="footer-contact">
-            <span className="footer-label">Get in touch</span>
-            <a href="mailto:aouezgharsafouan@gmail.com">aouezgharsafouan@gmail.com <span>↗</span></a>
-            <p>Ghent, Belgium<br />Working worldwide</p>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <span>© 2026 Safouan Aouezghar</span>
-          <span>English · Français · العربية</span>
-          <a href="#top">Back to top ↗</a>
-        </div>
-      </div>
-    </footer>
-  )
-}
-
-const Eyebrow = ({ children }) => <p className="eyebrow"><span className="eyebrow-dot" />{children}</p>
-
-function FluidField() {
-  return (
-    <div className="section-shader" aria-hidden="true">
-      <StructureFlowCollection variant="fluid-field" hue={-166} saturation={1.00} brightness={1.25} />
-    </div>
-  )
-}
+const mockups = [
+  {
+    name: "Bar César.",
+    type: "Restaurant website · Concept",
+    file: "bar-cesar",
+    image: "/projects/bar-cesar.jpg",
+    alt: "Bar César interior photography featured in the restaurant website concept",
+    url: "/projects/bar-cesar/index.html",
+    theme: "cesar",
+    copy: "A responsive restaurant concept with interactive menus, galleries and a guided enquiry flow.",
+  },
+  {
+    name: "An identity with feeling.",
+    type: "Identity mockup",
+    file: "identity",
+    theme: "orange",
+    copy: "A space for a future brand identity.",
+  },
+  {
+    name: "Made for every screen.",
+    type: "Mobile mockup",
+    file: "mobile",
+    theme: "sage",
+    copy: "A space for a future digital experience.",
+  },
+];
 
 export default function App() {
-  const aboutRef = useRef(null)
-
-  const handleContactSubmit = (event) => {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    const name = formData.get('name')
-    const email = formData.get('email')
-    const project = formData.get('project')
-    const subject = `Project enquiry from ${name}`
-    const body = `Name: ${name}\nEmail: ${email}\n\nProject details:\n${project}`
-    window.location.href = `mailto:aouezgharsafouan@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  }
-
+  const root = useRef(null);
+  const [systemReduced, setSystemReduced] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const [quiet, setQuiet] = useState(false);
+  const [emailReady, setEmailReady] = useState(false);
+  const reduceMotion = quiet || systemReduced;
   useEffect(() => {
-    let targetProgress = 0
-    let currentProgress = 0
-    let frameId
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setSystemReduced(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    if (reduceMotion) return;
+    const splits = [];
+    const mm = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      const textTargets = gsap.utils.toArray(
+        "main h1, main h2, main h3, main p:not(.form-note), .hero-caption > span, .service-name, .footer-top > span"
+      ).filter(el => !el.closest(".scroll-expand__overlay"));
+      textTargets.forEach((el) => {
+        const display = el.matches("h1, h2, h3, .finale-word, .footer-wordmark, .service-name");
+        const accessibleText = el.getAttribute("aria-label") || el.innerText.replace(/\s+/g, " ").trim();
+        const split = SplitText.create(el, {
+          type: "words,chars", tag: "span", aria: "auto",
+          wordsClass: "fold-word", charsClass: "fold-char",
+        });
+        el.setAttribute("aria-label", accessibleText);
+        splits.push(split);
+        gsap.from(split.chars, {
+          rotationX: display ? -90 : -65,
+          yPercent: display ? 85 : 65,
+          transformOrigin: "50% 100%",
+          transformPerspective: 700,
+          duration: display ? 0.85 : 0.55,
+          stagger: { amount: Math.min(display ? 0.65 : 0.4, split.chars.length * 0.018), from: "start" },
+          ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 94%", once: true },
+          clearProps: "transform,transformOrigin",
+        });
+      });
+      // Animate remaining text in its existing element so controls and dynamic
+      // React labels keep their original DOM and behavior.
+      const remainingText = new Set();
+      const walker = document.createTreeWalker(root.current, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const el = node.parentElement;
+        if (!node.textContent.trim() || !el || el.closest("svg, .fold-word, .fold-char, .scroll-expand, .skip-link, .footer-wordmark, .finale")) continue;
+        if (!el.querySelector(".fold-char")) remainingText.add(el);
+      }
+      root.current.querySelectorAll("input, textarea").forEach(el => remainingText.add(el));
+      remainingText.forEach(el => {
+        gsap.fromTo(el, { clipPath: "inset(0 100% 0 0)" }, {
+          clipPath: "inset(0 0% 0 0)", duration: 0.7, ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 97%", once: true },
+          clearProps: "clipPath",
+        });
+      });
+      gsap.fromTo(".finale > div", { clipPath: "inset(0 100% 0 0)" }, {
+        clipPath: "inset(0 0% 0 0)", duration: 0.85, stagger: 0.08,
+        ease: "power3.out", clearProps: "clipPath",
+        scrollTrigger: { trigger: ".finale", start: "top 95%", once: true },
+      });
+      gsap.from(".hero-portrait", {
+        y: 80, rotation: -6, duration: 1.2, ease: "power4.out",
+      });
+      gsap.to(".hero-frame", {
+        clipPath: "inset(3% 7% 14% 7% round 4px)",
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero-track",
+          start: "top top",
+          end: "bottom bottom",
+          scrub: true,
+        },
+      });
+      gsap.to(".hero-portrait", {
+        scale: 0.96,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero-track",
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+      const t = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".statement",
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1,
+        },
+      });
+      t.fromTo(
+        ".statement-mark",
+        { rotation: -100, rotateY: -55, y: 90 },
+        { rotation: 100, rotateY: 45, y: -70, ease: "none" },
+      );
+      mm.add("(min-width: 761px)", () => {
+        const chapters = gsap.utils.toArray(".work-chapter");
+        gsap.set(chapters.slice(1), { yPercent: 100 });
+        const timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: ".chapters",
+            pin: ".chapter-stage",
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 0.65,
+          },
+        });
+        chapters
+          .slice(1)
+          .forEach((chapter, i) =>
+            timeline
+              .to(chapter, { yPercent: 0, ease: "none", duration: 1 }, i)
+              .to(
+                chapters[i].querySelector(".mockup-image"),
+                { scale: 0.88, yPercent: -12, duration: 1, ease: "none" },
+                i,
+              ),
+          );
+        gsap.to(".about-portrait img", {
+          yPercent: 7,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".about-section",
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true,
+          },
+        });
+      });
+      const finale = root.current.querySelector(".finale");
+      const home = root.current.querySelector(".atom-home");
+      const mark = root.current.querySelector(".falling-mark");
+      const words = gsap.utils.toArray(".finale-word");
+      const moveWords = words.map(word => gsap.quickTo(word, "x", { duration: 0.45, ease: "power3.out" }));
+      // Sample the actual ellipse outlines, rather than the rotated SVG box.
+      const outline = Array.from({ length: 8 }, (_, ellipse) =>
+        Array.from({ length: 160 }, (_, point) => {
+          const angle = point / 160 * Math.PI * 2;
+          const rotation = ellipse * Math.PI / 8;
+          const x = 15 * Math.cos(angle);
+          const y = 45 * Math.sin(angle);
+          return { x: 50 + x * Math.cos(rotation) - y * Math.sin(rotation),
+            y: 50 + x * Math.sin(rotation) + y * Math.cos(rotation) };
+        })
+      ).flat();
+      const clearMark = () => {
+        const matrix = mark.getScreenCTM();
+        if (!matrix) return;
+        const stroke = Math.hypot(matrix.a, matrix.b) * 0.6;
+        const clearance = 10;
+        const points = outline.map(point => ({
+          x: matrix.a * point.x + matrix.c * point.y + matrix.e,
+          y: matrix.b * point.x + matrix.d * point.y + matrix.f,
+        }));
+        words.forEach((word, index) => {
+          const rect = word.getBoundingClientRect();
+          const currentX = Number(gsap.getProperty(word, "x")) || 0;
+          let edgeLeft = Infinity;
+          let edgeRight = -Infinity;
+          points.forEach(point => {
+            const dy = Math.max(rect.top - point.y, point.y - rect.bottom, 0);
+            if (dy > clearance + stroke) return;
+            const padding = Math.sqrt(Math.max(0, (clearance + stroke) ** 2 - dy ** 2));
+            edgeLeft = Math.min(edgeLeft, point.x - padding);
+            edgeRight = Math.max(edgeRight, point.x + padding);
+          });
+          const shift = !Number.isFinite(edgeLeft) ? 0 : word.dataset.side === "left"
+            ? Math.min(0, edgeLeft - (rect.right - currentX))
+            : Math.max(0, edgeRight - (rect.left - currentX));
+          moveWords[index](shift);
+        });
+      };
+      // Keep the descent in viewport space: the page scrolls past the atom
+      // while it gradually travels from the upper edge toward the middle.
+      const descent = { progress: 0 };
+      let atomMotion;
+      const placeMark = () => {
+        const scene = atomMotion?.scrollTrigger;
+        if (!scene) return;
+        const scroll = gsap.utils.clamp(scene.start, scene.end, window.scrollY);
+        const finaleTop = finale.getBoundingClientRect().top + window.scrollY;
+        const slot = home.getBoundingClientRect();
+        const homeTop = slot.top + window.scrollY + (slot.height - mark.clientHeight) / 2;
+        const startViewportTop = homeTop - scene.start;
+        const viewportTop = gsap.utils.interpolate(startViewportTop, window.innerHeight * 0.4, descent.progress);
+        const travel = gsap.utils.clamp(0, 1, descent.progress / 0.4);
+        const blend = travel * travel * (3 - 2 * travel);
+        const homeX = slot.left + (slot.width - mark.clientWidth) / 2;
+        const centerX = (window.innerWidth - mark.clientWidth) / 2;
+        gsap.set(mark, {
+          x: gsap.utils.interpolate(homeX, centerX, blend),
+          y: scroll + viewportTop - finaleTop,
+          rotation: -70 + descent.progress * 190,
+          scale: 0.85 + descent.progress * 0.15,
+        });
+        clearMark();
+      };
+      atomMotion = gsap.to(descent, {
+        progress: 1, ease: "none",
+        onUpdate: () => placeMark(),
+        scrollTrigger: {
+          trigger: ".playground-heading", start: "top 20%",
+          endTrigger: ".finale", end: "bottom 35%",
+          scrub: 1.2, invalidateOnRefresh: true,
+          onUpdate: () => placeMark(),
+        },
+      });
+      // Creation can synchronously refresh ScrollTrigger; register only once
+      // atomMotion exists, then position immediately for restored scroll states.
+      atomMotion.scrollTrigger.vars.onRefresh = placeMark;
+      placeMark();
 
-    const updateAboutProgress = () => {
-      if (!aboutRef.current) return
-      const { top, height } = aboutRef.current.getBoundingClientRect()
-      const viewport = window.innerHeight
-      const start = viewport * 0.92
-      const end = -height * 0.5
-      targetProgress = Math.min(1, Math.max(0, (start - top) / (start - end)))
-    }
-
-    const easeAboutProgress = () => {
-      currentProgress += (targetProgress - currentProgress) * 0.055
-      if (aboutRef.current) aboutRef.current.style.setProperty('--about-progress', currentProgress.toFixed(3))
-      frameId = window.requestAnimationFrame(easeAboutProgress)
-    }
-
-    updateAboutProgress()
-    easeAboutProgress()
-    window.addEventListener('scroll', updateAboutProgress, { passive: true })
-    window.addEventListener('resize', updateAboutProgress)
+    }, root);
+    const refresh = () => ScrollTrigger.refresh();
+    document.fonts.ready.then(refresh);
+    window.addEventListener("load", refresh);
     return () => {
-      window.cancelAnimationFrame(frameId)
-      window.removeEventListener('scroll', updateAboutProgress)
-      window.removeEventListener('resize', updateAboutProgress)
-    }
-  }, [])
+      window.removeEventListener("load", refresh);
+      mm.revert();
+      ctx.revert();
+      gsap.killTweensOf(".finale-word");
+      gsap.set(".finale-word", { clearProps: "transform" });
+      splits.forEach(split => split.revert());
+    };
+  }, [reduceMotion]);
 
+  function contact(event) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const body = `Name: ${data.get("name")}\nEmail: ${data.get("email")}\n\nProject details:\n${data.get("project")}`;
+    window.location.href = `mailto:aouezgharsafouan@gmail.com?subject=${encodeURIComponent(`Project enquiry from ${data.get("name")}`)}&body=${encodeURIComponent(body)}`;
+    setEmailReady(true);
+  }
   return (
-    <main className="portfolio" id="top">
-      <Header />
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-shader" aria-hidden="true">
-          <StructureFlowCollection variant="fluid-field" hue={-166} saturation={1.00} brightness={1.25} />
-        </div>
-        <div className="hero-copy">
-          <Eyebrow>Independent designer / developer</Eyebrow>
-          <h1 id="hero-title">WEB<br /><em>DESIGNER</em></h1>
-          <div className="hero-intro"><span className="intro-line" aria-hidden="true" /><p>I create thoughtful digital experiences where bold direction meets clear, useful interaction.</p></div>
-          <div className="hero-actions">
-            <a className="button button-primary" href="#contact">Hire me <ArrowIcon /></a>
-            <a className="button button-quiet" href="#work">View my work <span className="button-arrow">↗</span></a>
+    <div
+      ref={root}
+      className={`portfolio ${reduceMotion ? "reduced-motion" : ""}`}
+      id="top"
+    >
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
+      <Header quiet={reduceMotion} setQuiet={setQuiet} />
+      <main id="main">
+        <section className="hero-track" aria-labelledby="hero-title">
+          <div className="hero-frame">
+            <div className="hero-grid" aria-hidden="true">
+              {!reduceMotion && (
+                <Suspense fallback={null}>
+                  <GridScan />
+                </Suspense>
+              )}
+            </div>
+            <div className="hero-caption">
+              <span>Safouan Aouezghar</span>
+              <span>Ghent, BE — Working worldwide</span>
+            </div>
+            <h1 id="hero-title">
+              <span className="hero-line">
+                <span>DESIGN</span>
+              </span>
+              <span className="hero-line hero-line-front">
+                <span>WITH FEELING.</span>
+              </span>
+            </h1>
+            <img
+              className="hero-portrait"
+              src="/portrait.png"
+              alt="Illustrated portrait of Safouan Aouezghar"
+              width="1145"
+              height="1209"
+              fetchPriority="high"
+            />
+            <div className="hero-side-note">
+              A thoughtful eye.
+              <br />A hands-on approach.
+            </div>
+            <div className="hero-bottom">
+              <a href="#work" className="round-link">
+                <span className="round-icon">
+                  <Arrow down />
+                </span>
+                Explore the work
+              </a>
+              <p>
+                Distinctive websites & identities.
+                <br />
+                From the first idea to the final detail.
+              </p>
+              <a href="#contact" className="text-link">
+                Let’s make something <Arrow />
+              </a>
+            </div>
           </div>
-        </div>
-        <div className="hero-visual" aria-label="Portrait of Safouan">
-          <div className="visual-orbit orbit-one" /><div className="visual-orbit orbit-two" />
-          <div className="portrait-disc">
-            <img className="portrait-image" src="/portrait.png" alt="Safouan smiling in a black shirt" />
+        </section>
+
+        <section className="statement section-pad">
+          <div className="section-topline">
+            <span>Good design makes you feel something.</span>
+            <span>Great design makes it work.</span>
           </div>
-          <p className="visual-note">Based in Belgium<br />Working worldwide</p><span className="visual-number">01</span>
-        </div>
-        <div className="hero-footer"><span>Scroll to explore</span><span className="footer-rule" /><span>© 2026</span></div>
-      </section>
-      <section className="about-section" id="about" ref={aboutRef}>
-        <div className="about-heading">
-          <Eyebrow>A little more about me</Eyebrow>
-          <h2>Design that feels<br /><em>like you.</em></h2>
-        </div>
-        <div className="about-copy">
-          <p className="about-lead">I’m Safouan Aouezghar, a designer and developer working across visual direction, interface design and frontend development.</p>
-          <p>Combining those disciplines lets me protect the central idea from the first concept to the finished website.</p>
-          <p>I focus on independent businesses where atmosphere matters and the digital experience still needs to remain clear and useful.</p>
-          <div className="about-meta">
-            <span>Ghent, Belgium</span>
-            <span>English · French · Arabic</span>
-            <span>Booking from September 2026</span>
+          <h2>
+            <span className="rise">
+              <span>A little instinct.</span>
+            </span>
+            <span className="statement-middle rise">
+              <span>
+                A lot of <em>intention.</em>
+              </span>
+            </span>
+          </h2>
+          <Mark className="statement-mark" />
+          <div className="statement-copy">
+            <p>
+              I bring visual direction, design and development together to build
+              digital experiences with a point of view. Thoughtful in the
+              details. Clear in their purpose.
+            </p>
+            <a className="text-link" href="#about">
+              Meet the person behind the pixels <Arrow />
+            </a>
           </div>
-        </div>
-      </section>
-      <section className="work-section" id="work">
-        <FluidField />
-        <div className="work-heading">
-          <Eyebrow>Selected work</Eyebrow>
-          <h2>Coming into<br /><em>focus.</em></h2>
-        </div>
-        <div className="work-grid" aria-label="Selected work projects">
-          <article className="work-card" data-project="01"><span>01</span><div className="work-card-canvas" /></article>
-          <article className="work-card" data-project="02"><span>02</span><div className="work-card-canvas" /></article>
-          <article className="work-card" data-project="03"><span>03</span><div className="work-card-canvas" /></article>
-        </div>
-      </section>
-      <section className="services-section" id="services">
-        <div className="services-heading">
-          <Eyebrow>Ways to work together</Eyebrow>
-          <h2>Choose the right<br /><em>level of detail.</em></h2>
-          <p>Clear packages for businesses that want a more thoughtful presence online, without losing sight of what needs to get done.</p>
-        </div>
-        <div className="services-list">
-          {serviceBundles.map((bundle) => (
-            <article className={`service-card ${bundle.featured ? 'is-featured' : ''}`} key={bundle.number}>
-              <div className="service-card-top">
-                <span className="service-number">{bundle.number}</span>
-                {bundle.featured && <span className="service-badge">Most chosen</span>}
+        </section>
+
+        <section
+          className="expansion"
+          aria-label="Design detail expanding into a full visual composition"
+        >
+          <ScrollExpand
+            src="/details-bigger-picture.png"
+            alt="Illustrated design workspace with a laptop, colour swatches, stationery and a plant"
+            useWindowScroll
+            enabled={!reduceMotion}
+            startWidth={30}
+            startHeight={46}
+            startRadius={4}
+            mediaZoom={1.1}
+            scrollDistance={0.9}
+            holdDistance={0.12}
+            overlayScrim={1}
+            title="The details. The bigger picture."
+            scrollHint="Keep scrolling — see it open up."
+          >
+            <p>From a single idea.</p>
+            <h2>
+              To a whole
+              <br />
+              <em>new perspective.</em>
+            </h2>
+          </ScrollExpand>
+        </section>
+
+        <section
+          id="work"
+          className="work-section"
+          aria-labelledby="work-title"
+        >
+          <div className="work-heading section-pad">
+            <h2 id="work-title" className="rise">
+              <span>
+                Selected <em>works.</em>
+              </span>
+            </h2>
+            <div>
+              <span className="work-status">Portfolio in progress</span>
+              <p>
+                A website concept, brought to life.
+                <br />
+                More projects to come. Two explorations remain placeholders.
+              </p>
+            </div>
+          </div>
+          <div className="chapters">
+            <div className="chapter-stage">
+              {mockups.map((mockup, i) => (
+                <article
+                  className={`work-chapter theme-${mockup.theme}`}
+                  key={mockup.file}
+                >
+                  <div className="chapter-top">
+                    <span>{mockup.type}</span>
+                    {mockup.url ? (
+                      <a className="text-link project-link" href={mockup.url} target="_blank" rel="noopener noreferrer">
+                        View project <Arrow />
+                      </a>
+                    ) : <span>Project placeholder</span>}
+                  </div>
+                  {mockup.url ? (
+                    <a className="project-preview-link" href={mockup.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${mockup.name} website`}>
+                  <img
+                    className={`mockup-image${mockup.image ? " project-image" : ""}`}
+                    src={mockup.image || `/mockups/${mockup.file}.svg`}
+                    alt={mockup.alt || `${mockup.type}: unbranded concept placeholder, not a completed client project`}
+                    loading="lazy"
+                    width={mockup.image ? 1672 : 1600}
+                    height={mockup.image ? 941 : 1000}
+                  />
+                    </a>
+                  ) : (
+                  <img
+                    className={`mockup-image${mockup.image ? " project-image" : ""}`}
+                    src={mockup.image || `/mockups/${mockup.file}.svg`}
+                    alt={mockup.alt || `${mockup.type}: unbranded concept placeholder, not a completed client project`}
+                    loading="lazy"
+                    width={mockup.image ? 1672 : 1600}
+                    height={mockup.image ? 941 : 1000}
+                  />
+                  )}
+                  <div className="chapter-bottom">
+                    <h3>{mockup.name}</h3>
+                    <p>{mockup.copy}</p>
+                    <span className="chapter-count">{String(i + 1).padStart(2, "0")} / {String(mockups.length).padStart(2, "0")}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="about-section section-pad" id="about">
+          <div className="about-portrait">
+            <div className="portrait-label">
+              <span>
+                The person
+                <br />
+                behind the work.
+              </span>
+              <Mark />
+            </div>
+            <img
+              src="/portrait.png"
+              alt="Safouan, independent designer and developer"
+              loading="lazy"
+              width="1145"
+              height="1209"
+            />
+            <span className="portrait-signature">Safouan.</span>
+          </div>
+          <div className="about-editorial">
+            <h2 className="rise">
+              <span>
+                A designer’s eye.
+                <br />
+                <em>A developer’s mind.</em>
+              </span>
+            </h2>
+            <p className="large-copy">
+              I’m Safouan Aouezghar. I create thoughtful digital experiences for
+              independent businesses with something to say.
+            </p>
+            <p>
+              Working across visual direction, interface design and frontend
+              development lets me protect the central idea from the first sketch
+              to the finished website.
+            </p>
+            <p>
+              I care about the atmosphere a website creates. And just as much
+              about how naturally it works.
+            </p>
+            <div className="about-details">
+              <span>Based in Ghent, Belgium</span>
+              <span>English · Français · العربية</span>
+              <span>Working worldwide</span>
+            </div>
+            <a className="text-link" href="#contact">
+              Say hello <Arrow />
+            </a>
+            <div className="detail-pair">
+              <div>
+                <Mark />
+                <span>Considered by design.</span>
               </div>
-              <h3>{bundle.name}</h3>
-              <p className="service-audience">{bundle.audience}</p>
-              <div className="service-price"><span>From</span><strong>{bundle.price}</strong></div>
-              <ul>{bundle.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-              <div className="service-card-bottom">
-                <span className="service-timeline">Typical timeline · {bundle.timeline}</span>
-                <a href="https://safouanaouezghar.com/#contact" className="service-link">{bundle.cta} <span>↗</span></a>
+              <div>
+                <span className="code-art">&lt; / &gt;</span>
+                <span>Built with intention.</span>
               </div>
-            </article>
-          ))}
-        </div>
-      </section>
-      <section className="process-section" id="process" aria-labelledby="process-title">
-        <FluidField />
-        <div className="process-heading">
-          <Eyebrow>A clear way forward</Eyebrow>
-          <h2 id="process-title">From first idea<br /><em>to launch.</em></h2>
-          <p>A thoughtful process keeps the work focused, collaborative and moving in the right direction.</p>
-        </div>
-        <div className="process-list">
-          {processSteps.map((step) => (
-            <article className="process-step" key={step.number}>
-              <span className="process-number">{step.number}</span>
-              <div className="process-step-copy">
-                <h3>{step.title}</h3>
-                <p>{step.copy}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="services-section section-pad" id="services">
+          <div className="services-heading">
+            <h2 className="rise">
+              <span>
+                Good together.
+                <br />
+                <em>Better, by design.</em>
+              </span>
+            </h2>
+            <p>
+              One creative partner, from direction to delivery. Choose the right
+              starting point for your business.
+            </p>
+          </div>
+          <div className="services-list">
+            {serviceBundles.map((bundle) => (
+              <details
+                className="service-row"
+                key={bundle.number}
+                onToggle={() => ScrollTrigger.refresh()}
+              >
+                <summary>
+                  <span className="service-name">{bundle.name}</span>
+                  <span className="service-price">From {bundle.price}</span>
+                  <span className="service-plus" aria-hidden="true" />
+                </summary>
+                <div className="service-content">
+                  <p>{bundle.audience}</p>
+                  <ul>
+                    {bundle.features.map((feature) => (
+                      <li key={feature}>{feature}</li>
+                    ))}
+                  </ul>
+                  <div>
+                    <span className="timeline">
+                      Typical timeline: {bundle.timeline}
+                    </span>
+                    <a className="text-link" href="#contact">
+                      {bundle.cta}
+                      <Arrow />
+                    </a>
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section className="process-section section-pad" id="process">
+          <div className="process-heading">
+            <h2>
+              From the first
+              <br />
+              <em>“what if.”</em>
+            </h2>
+            <p>
+              A clear process. Room to explore.
+              <br />
+              And care at every step.
+            </p>
+          </div>
+          <div className="process-list">
+            {processSteps.map((step) => (
+              <article className="process-step" key={step.number}>
+                <span>{step.number}</span>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.copy}</p>
+                </div>
+                <Arrow />
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <div className="finale-sequence">
+        <section className="playground section-pad" aria-label="Visual studies">
+          <div className="playground-heading">
+            <div className="playground-title">
+              <h2>Always <em>exploring.</em></h2>
+              <span className="atom-home" aria-hidden="true" />
+            </div>
+            <p>
+              A visual playground.
+              <br />
+              Studies in form, rhythm and possibility.
+            </p>
+          </div>
+          <div className="study-grid">
+            {Array.from({ length: 12 }, (_, i) => (
+              <div
+                key={i}
+                className={`study study-${i % 6}`}
+                aria-hidden="true"
+              >
+                {i % 3 === 0 ? (
+                  <Mark />
+                ) : i % 3 === 1 ? (
+                  <span>Aa</span>
+                ) : (
+                  <div className="study-shape" />
+                )}
               </div>
-              <span className="process-arrow" aria-hidden="true">↗</span>
-            </article>
-          ))}
+            ))}
+          </div>
+        </section>
+
+        <section
+          className="finale"
+          aria-label="Made with feeling, built with purpose"
+        >
+          <div className="finale-left"><span className="finale-word" data-side="left">MADE</span>{" "}<span className="finale-word" data-side="right">WITH</span></div>
+          <div className="finale-right">
+            <em className="finale-word" data-side="right">FEELING.</em>
+          </div>
+          <div className="finale-left"><span className="finale-word" data-side="left">BUILT</span>{" "}<span className="finale-word" data-side="right">WITH</span></div>
+          <div className="finale-right">
+            <em className="finale-word" data-side="right">PURPOSE.</em>
+          </div>
+          <div className="finale-last"><span className="finale-word" data-side="left">ALWAYS.</span></div>
+          <Mark className="falling-mark" />
+        </section>
+
         </div>
-      </section>
-      <section className="contact-section" id="contact">
-        <div className="contact-layout">
+
+        <section className="contact-section section-pad" id="contact">
           <div className="contact-copy">
-            <Eyebrow>Have a project in mind?</Eyebrow>
-            <h2>Let’s make<br /><em>work that matters.</em></h2>
-            <p>Tell me what you’re building, where you’re headed and what you need help making clearer.</p>
-            <a className="contact-email" href="mailto:aouezgharsafouan@gmail.com">aouezgharsafouan@gmail.com <span>↗</span></a>
+            <h2>
+              Have a good
+              <br />
+              <em>feeling?</em>
+            </h2>
+            <p>
+              Tell me what you’re imagining.
+              <br />
+              Let’s find out what we can make together.
+            </p>
+            <a
+              className="contact-email text-link"
+              href="mailto:aouezgharsafouan@gmail.com"
+            >
+              aouezgharsafouan@gmail.com <Arrow />
+            </a>
           </div>
-          <form className="contact-form" onSubmit={handleContactSubmit}>
-            <label htmlFor="contact-name">Your name</label>
-            <input id="contact-name" name="name" type="text" autoComplete="name" placeholder="Name" required />
-            <label htmlFor="contact-email">Your email</label>
-            <input id="contact-email" name="email" type="email" autoComplete="email" placeholder="you@company.com" required />
-            <label htmlFor="contact-project">Tell me about the project</label>
-            <textarea id="contact-project" name="project" rows="4" placeholder="A few words about what you need..." required />
-            <button className="button button-primary" type="submit">Start a conversation <ArrowIcon /></button>
-            <p className="form-note">This opens your email app with the message ready to send.</p>
+          <form className="contact-form" onSubmit={contact}>
+            <label htmlFor="name">Your name</label>
+            <input
+              id="name"
+              name="name"
+              autoComplete="name"
+              placeholder="Alex Smith"
+              required
+            />
+            <label htmlFor="email">Your email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="alex@company.com"
+              required
+            />
+            <label htmlFor="project">What do you have in mind?</label>
+            <textarea
+              id="project"
+              name="project"
+              rows="3"
+              placeholder="The idea, the ambition, the details…"
+              required
+            />
+            <button type="submit" className="send-button">
+              Let’s start a conversation <Arrow />
+            </button>
+            <p className="form-note" role="status">
+              {emailReady
+                ? "Your draft is ready in your email app. Review it there and send when you’re ready."
+                : "Opens your email app with a draft. Nothing is sent automatically."}
+            </p>
           </form>
+        </section>
+      </main>
+      <footer className="site-footer">
+        <div className="footer-top">
+          <a href="#top" className="text-link">
+            Back to the beginning <Arrow />
+          </a>
+          <span>
+            Independent by choice.
+            <br />
+            Thoughtful by nature.
+          </span>
         </div>
-      </section>
-      <Footer />
-    </main>
-  )
+        <a
+          className="footer-wordmark"
+          href="#top"
+          aria-label="Safouan, back to top"
+        >
+          SAFOUAN
+        </a>
+        <div className="footer-bottom">
+          <span>© 2026 Safouan Aouezghar</span>
+          <nav aria-label="Footer navigation">
+            <a href="#work">Work</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+          </nav>
+          <span>Ghent, Belgium</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
