@@ -4,6 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import ScrollExpand from "./ScrollExpand";
 import { setupServicesMotion } from "./servicesMotion";
+import { setupFinaleMotion } from "./finaleMotion";
 const GridScan = lazy(() => import("./GridScan"));
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -244,6 +245,7 @@ export default function App() {
       if (!root.current) return;
     const splits = [];
     let cleanupServices = () => {};
+    let cleanupFinale = () => {};
     const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
       const textTargets = gsap.utils.toArray(
@@ -392,88 +394,7 @@ export default function App() {
       });
       processTimeline.fromTo(".process-swipe-hint", { visibility: "hidden" }, { visibility: "visible", duration: 0 }, 2.15);
       processTimeline.to({}, { duration: 0.8 });
-      const finale = root.current.querySelector(".finale");
-      const home = root.current.querySelector(".atom-home");
-      const mark = root.current.querySelector(".falling-mark");
-      const words = gsap.utils.toArray(".finale-word");
-      const moveWords = words.map(word => gsap.quickTo(word, "x", { duration: 0.45, ease: "power3.out" }));
-      // Sample the actual ellipse outlines, rather than the rotated SVG box.
-      const outline = Array.from({ length: 8 }, (_, ellipse) =>
-        Array.from({ length: 160 }, (_, point) => {
-          const angle = point / 160 * Math.PI * 2;
-          const rotation = ellipse * Math.PI / 8;
-          const x = 15 * Math.cos(angle);
-          const y = 45 * Math.sin(angle);
-          return { x: 50 + x * Math.cos(rotation) - y * Math.sin(rotation),
-            y: 50 + x * Math.sin(rotation) + y * Math.cos(rotation) };
-        })
-      ).flat();
-      const clearMark = () => {
-        const matrix = mark.getScreenCTM();
-        if (!matrix) return;
-        const stroke = Math.hypot(matrix.a, matrix.b) * 0.6;
-        const clearance = 10;
-        const points = outline.map(point => ({
-          x: matrix.a * point.x + matrix.c * point.y + matrix.e,
-          y: matrix.b * point.x + matrix.d * point.y + matrix.f,
-        }));
-        words.forEach((word, index) => {
-          const rect = word.getBoundingClientRect();
-          const currentX = Number(gsap.getProperty(word, "x")) || 0;
-          let edgeLeft = Infinity;
-          let edgeRight = -Infinity;
-          points.forEach(point => {
-            const dy = Math.max(rect.top - point.y, point.y - rect.bottom, 0);
-            if (dy > clearance + stroke) return;
-            const padding = Math.sqrt(Math.max(0, (clearance + stroke) ** 2 - dy ** 2));
-            edgeLeft = Math.min(edgeLeft, point.x - padding);
-            edgeRight = Math.max(edgeRight, point.x + padding);
-          });
-          const shift = !Number.isFinite(edgeLeft) ? 0 : word.dataset.side === "left"
-            ? Math.min(0, edgeLeft - (rect.right - currentX))
-            : Math.max(0, edgeRight - (rect.left - currentX));
-          moveWords[index](shift);
-        });
-      };
-      // Keep the descent in viewport space: the page scrolls past the atom
-      // while it gradually travels from the upper edge toward the middle.
-      const descent = { progress: 0 };
-      let atomMotion;
-      const placeMark = () => {
-        const scene = atomMotion?.scrollTrigger;
-        if (!scene) return;
-        const scroll = gsap.utils.clamp(scene.start, scene.end, window.scrollY);
-        const finaleTop = finale.getBoundingClientRect().top + window.scrollY;
-        const slot = home.getBoundingClientRect();
-        const homeTop = slot.top + window.scrollY + (slot.height - mark.clientHeight) / 2;
-        const startViewportTop = homeTop - scene.start;
-        const viewportTop = gsap.utils.interpolate(startViewportTop, window.innerHeight * 0.4, descent.progress);
-        const travel = gsap.utils.clamp(0, 1, descent.progress / 0.4);
-        const blend = travel * travel * (3 - 2 * travel);
-        const homeX = slot.left + (slot.width - mark.clientWidth) / 2;
-        const centerX = (window.innerWidth - mark.clientWidth) / 2;
-        gsap.set(mark, {
-          x: gsap.utils.interpolate(homeX, centerX, blend),
-          y: scroll + viewportTop - finaleTop,
-          rotation: -70 + descent.progress * 190,
-          scale: 0.85 + descent.progress * 0.15,
-        });
-        clearMark();
-      };
-      atomMotion = gsap.to(descent, {
-        progress: 1, ease: "none",
-        onUpdate: () => placeMark(),
-        scrollTrigger: {
-          trigger: ".playground-heading", start: "top 20%",
-          endTrigger: ".finale", end: "bottom 35%",
-          scrub: 1.2, invalidateOnRefresh: true,
-          onUpdate: () => placeMark(),
-        },
-      });
-      // Creation can synchronously refresh ScrollTrigger; register only once
-      // atomMotion exists, then position immediately for restored scroll states.
-      atomMotion.scrollTrigger.vars.onRefresh = placeMark;
-      placeMark();
+      cleanupFinale = setupFinaleMotion(root.current);
 
     }, root);
     const refresh = () => ScrollTrigger.refresh();
@@ -482,6 +403,7 @@ export default function App() {
     animationCleanup = () => {
       window.removeEventListener("load", refresh);
       cleanupServices();
+      cleanupFinale();
       mm.revert();
       ctx.revert();
       gsap.killTweensOf(".finale-word");
@@ -856,7 +778,6 @@ export default function App() {
             <em className="finale-word" data-side="right">PURPOSE.</em>
           </div>
           <div className="finale-last"><span className="finale-word" data-side="left">ALWAYS.</span></div>
-          <Mark className="falling-mark" />
         </section>
 
         </div>
@@ -933,7 +854,7 @@ export default function App() {
           href="#top"
           aria-label="Safouan, back to top"
         >
-          SAFOUAN
+          <span className="footer-letters" aria-hidden="true">SAF<span className="footer-atom-slot"><span className="footer-o">O</span></span>UAN</span>
         </a>
         <div className="footer-bottom">
           <span>© 2026 Safouan Aouezghar</span>
@@ -945,6 +866,7 @@ export default function App() {
           <span>Ghent, Belgium</span>
         </div>
       </footer>
+      <Mark className="falling-mark" />
     </div>
   );
 }

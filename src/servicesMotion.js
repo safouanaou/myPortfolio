@@ -1,7 +1,7 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// Every pose is a pure function of scroll position. No timed tweens or inertia.
+// One smoothed scroll playhead drives both the atom and every reveal.
 export function setupServicesMotion(root) {
   const section = root.querySelector(".services-section");
   const stage = section.querySelector(".services-stage");
@@ -13,10 +13,13 @@ export function setupServicesMotion(root) {
   const clamp = gsap.utils.clamp(0, 1);
   const mix = gsap.utils.interpolate;
   let geometry;
+  let lastFrame = "";
+  const playhead = { scroll: window.scrollY };
   section.classList.add("services-animated");
   origin.parentElement.classList.add("atom-departure");
 
   function measure() {
+    lastFrame = "";
     const home = origin.getBoundingClientRect();
     const bounds = section.getBoundingClientRect();
     const panel = panels[0].getBoundingClientRect();
@@ -35,8 +38,11 @@ export function setupServicesMotion(root) {
 
   function render() {
     if (!geometry) return;
+    const frameKey = `${playhead.scroll}:${window.scrollY}`;
+    if (frameKey === lastFrame) return;
+    lastFrame = frameKey;
     const { top, start, distance, width, left, size } = geometry;
-    const scroll = window.scrollY;
+    const scroll = playhead.scroll;
     const home = origin.getBoundingClientRect();
     const frame = stage.getBoundingClientRect();
     const descent = clamp((scroll - start) / (top - start));
@@ -49,18 +55,17 @@ export function setupServicesMotion(root) {
     const initialX = index === 0 ? window.innerWidth / 2 : left;
     const edge = mix(mix(initialX, left + width, reveal), left, erase);
     const titleCenter = frame.top + geometry.titleY;
-    const centerY = frame.top + stage.clientHeight / 2;
-    const targetY = index === 0 ? mix(centerY, titleCenter, reveal) : titleCenter;
+    const targetY = titleCenter;
     const homeX = home.left + home.width / 2;
     const homeY = home.top + home.height / 2;
     const x = scroll < top ? mix(homeX, window.innerWidth / 2, descent) : edge;
     // Interpolate in viewport space so the atom visibly descends as the page rises.
-    const y = scroll < top ? mix(geometry.homeTop - start, stage.clientHeight / 2, descent) : targetY;
+    const y = scroll < top ? mix(geometry.homeTop - start, geometry.titleY, descent) : targetY;
     gsap.set(atom, {
       x: scroll <= start ? 0 : x - homeX,
       y: scroll <= start ? 0 : y - homeY,
       scale: mix(1, size / home.width, descent),
-      rotation: descent * 360 + progress * 540,
+      rotation: descent * 180 + progress * 120,
       color: scroll <= start ? "#f1f0e9" : "#b8caef",
     });
     panels.forEach((panel, i) => {
@@ -84,13 +89,24 @@ export function setupServicesMotion(root) {
     });
   }
   measure();
-  const trigger = ScrollTrigger.create({
-    start: 0, end: "max", onUpdate: render,
-    onRefresh: () => { measure(); render(); },
+  const motion = gsap.to(playhead, {
+    scroll: () => ScrollTrigger.maxScroll(window),
+    ease: "none",
+    scrollTrigger: {
+      start: 0, end: "max", scrub: 0.4, invalidateOnRefresh: true,
+      onRefresh: () => { measure(); render(); },
+    },
   });
+  // Compensate for the origin's viewport movement on the same animation frame.
+  gsap.ticker.add(render);
   render();
   return () => {
-    trigger.kill();
+    gsap.ticker.remove(render);
+    motion.scrollTrigger.kill();
+    motion.kill();
+    gsap.set(atom, { clearProps: "transform,color" });
+    gsap.set(panels, { clearProps: "visibility" });
+    gsap.set([...titles, ...details.flat()], { clearProps: "transform,clipPath,opacity" });
     section.classList.remove("services-animated");
     origin.parentElement.classList.remove("atom-departure");
     panels.forEach(panel => { panel.inert = false; panel.removeAttribute("aria-hidden"); });
