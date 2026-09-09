@@ -42,13 +42,17 @@ export function setupFinaleMotion(root) {
   function clearPath(x, y, size) {
     const radius = size * 0.46;
     const clearance = 8;
+    // Open over a generous approach distance, hold the narrow corridor while
+    // the atom passes, then ease closed over the same distance in either direction.
+    const transitionDistance = Math.max(180, window.innerHeight * 0.28);
     const displacement = (rect, side, currentX) => {
       const dy = Math.max(rect.top - y, y - rect.bottom, 0);
-      if (dy >= radius + clearance) return 0;
-      const reach = Math.sqrt(Math.max(0, (radius + clearance) ** 2 - dy ** 2));
-      return side === "left"
+      const reach = radius + clearance;
+      const opening = smooth((reach + transitionDistance - dy) / transitionDistance);
+      const shift = side === "left"
         ? Math.min(0, x - reach - (rect.right - currentX))
         : Math.max(0, x + reach - (rect.left - currentX));
+      return shift * opening;
     };
     words.forEach(word => {
       const currentX = Number(gsap.getProperty(word, "x")) || 0;
