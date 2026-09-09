@@ -50,7 +50,7 @@ Headings use tight tracking and fluid sizes; section overrides preserve their in
 
 The sequence is portrait hero → editorial statement → expanding SVG composition → selected-work chapters → split about section with anchored portrait → service disclosures → four-step process → geometric study gallery → typography finale → contact → giant wordmark footer.
 
-Desktop sections use generous gutters and whitespace, with two-column about, process and contact layouts. The gallery has six columns. At 760px and below, the gutter becomes 24px, primary splits stack, the gallery becomes three columns, navigation becomes a menu, and work chapters flow vertically. Additional adjustments occur at 1000px and 1600px. Desktop chapter animation begins at 761px.
+Desktop sections use generous gutters and whitespace, with two-column about and contact layouts. The process uses a centered sticky stage and an absolutely positioned, overlapping horizontal deck. The gallery has six columns. At 760px and below, the gutter becomes 24px, primary splits stack, the gallery becomes three columns, navigation becomes a menu, and work chapters flow vertically. The process deck follows each arriving card horizontally and remains swipeable afterward. Additional adjustments occur at 1000px and 1600px. Desktop chapter animation begins at 761px.
 
 ## Elevation & Depth
 
@@ -67,6 +67,7 @@ Most surfaces and fields have square edges. Circular arrow buttons and disclosur
 - **ScrollExpand:** window-scroll progress expands the SVG from 30% width / 46% height to the full stage, removes its initial zoom, fades the title and reveals the concluding overlay. Configuration lives at its call site in `src/App.jsx`; behavior and base styles live in `src/ScrollExpand.jsx` and `src/ScrollExpand.css`.
 - **Work chapters:** three full-stage SVG mockups slide upward through a pinned desktop sequence. They remain explicitly labeled placeholders.
 - **Services:** native `details` / `summary` rows with plus-to-minus indicators. Opening a disclosure refreshes scroll measurements. Preserve the existing package prices.
+- **Process:** oversized centered DM Sans introduction with Instrument Serif emphasis, revealed and removed through clipped vertical movement without fading. A scrubbed GSAP timeline brings Discover, Shape, Build and Launch upward in order into a gently rotated paper deck. The illustrations in `public/images/process/` are the four original PNGs supplied by the user, matched by filename. Each card contains its supplied title and description. Reduced motion removes the sticky scroll sequence and presents the introduction above the accessible deck.
 - **Contact:** labeled, browser-validated fields and a blue action button create a draft in the visitor’s email application. There is no server submission or automatic sending.
 - **Motion:** GSAP controls entrance, reveal, hero clipping, desktop chapters and the finale. The system reduced-motion preference or “Motion off” disables these animations, omits GridScan, displays ScrollExpand at its final state, and lays chapters out in normal flow. CSS also disables smooth scrolling and collapses transitions. The in-page choice is session state, not persisted storage.
 

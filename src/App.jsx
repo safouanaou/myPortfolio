@@ -248,7 +248,7 @@ export default function App() {
     const ctx = gsap.context(() => {
       const textTargets = gsap.utils.toArray(
         "main h1, main h2, main h3, .service-name, .footer-top > span"
-      ).filter(el => !el.closest(".scroll-expand__overlay, .services-section"));
+      ).filter(el => !el.closest(".scroll-expand__overlay, .services-section, .process-section"));
       textTargets.forEach((el) => {
         const display = el.matches("h1, h2, h3, .finale-word, .footer-wordmark, .service-name");
         const accessibleText = el.getAttribute("aria-label") || el.innerText.replace(/\s+/g, " ").trim();
@@ -343,6 +343,55 @@ export default function App() {
         });
       });
       cleanupServices = setupServicesMotion(root.current);
+      const process = root.current.querySelector(".process-section");
+      const processCards = gsap.utils.toArray(".process-card");
+      const cardEntranceDuration = 1.6;
+      const cardEntranceStagger = 1.1;
+      gsap.set(process, { className: "process-section process-section--animated" });
+      const processTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: process,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 0.65,
+          invalidateOnRefresh: true,
+        },
+      });
+      processTimeline
+        .fromTo(".process-heading-line > span", { yPercent: 115, rotation: 3 }, {
+          yPercent: 0, rotation: 0, stagger: 0.12, duration: 0.8, ease: "power3.out",
+        }, 0)
+        .fromTo(".process-heading-caption > p", { yPercent: 110 }, {
+          yPercent: 0, duration: 0.65, ease: "power3.out",
+        }, 0.25)
+        .to(".process-heading-line > span", {
+          yPercent: -120, rotation: -3, stagger: 0.08, duration: 0.6, ease: "power3.inOut",
+        }, 1.5)
+        .to(".process-heading-caption > p", {
+          yPercent: -120, duration: 0.45, ease: "power3.inOut",
+        }, 1.55);
+      processCards.forEach((card, index) => {
+        processTimeline.fromTo(card, {
+          y: () => window.innerHeight + card.offsetHeight,
+          rotation: [ -14, 10, -10, 14 ][index],
+        }, {
+          y: [12, -12, 8, -5][index],
+          rotation: [-6, 3, -3, 6][index],
+          duration: cardEntranceDuration,
+          ease: "power2.inOut",
+        }, 2.15 + index * cardEntranceStagger);
+        // Follow each arrival on narrow screens; the settled deck remains
+        // freely swipeable so every full-size card can be read again.
+        processTimeline.to(".process-deck", {
+          scrollLeft: () => window.innerWidth <= 760
+            ? index * (processCards[1].offsetLeft - processCards[0].offsetLeft)
+            : 0,
+          duration: cardEntranceDuration,
+          ease: "power2.inOut",
+        }, 2.15 + index * cardEntranceStagger);
+      });
+      processTimeline.fromTo(".process-swipe-hint", { visibility: "hidden" }, { visibility: "visible", duration: 0 }, 2.15);
+      processTimeline.to({}, { duration: 0.8 });
       const finale = root.current.querySelector(".finale");
       const home = root.current.querySelector(".atom-home");
       const mark = root.current.querySelector(".falling-mark");
@@ -733,30 +782,32 @@ export default function App() {
           </div>
         </section>
 
-        <section className="process-section section-pad" id="process">
-          <div className="process-heading">
-            <h2>
-              From the first
-              <br />
-              <em>“what if.”</em>
-            </h2>
-            <p>
-              A clear process. Room to explore.
-              <br />
-              And care at every step.
-            </p>
-          </div>
-          <div className="process-list">
-            {processSteps.map((step) => (
-              <article className="process-step" key={step.number}>
-                <span>{step.number}</span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.copy}</p>
-                </div>
-                <Arrow />
-              </article>
-            ))}
+        <section className="process-section" id="process" aria-labelledby="process-title">
+          <div className="process-stage">
+            <div className="process-heading">
+              <h2 id="process-title" aria-label="From the first “what if.”">
+                <span className="process-heading-line"><span>From the first</span></span>
+                <span className="process-heading-line"><span><em>“what if.”</em></span></span>
+              </h2>
+              <div className="process-heading-caption">
+                <p>A clear process. Room to explore. And care at every step.</p>
+              </div>
+            </div>
+            <div className="process-deck" role="region" aria-label="The four steps of the process" tabIndex={0}>
+              <div className="process-list">
+                {processSteps.map((step, index) => (
+                  <article className="process-card" key={step.number} style={{ "--card-index": index, "--card-angle": `${[-6, 3, -3, 6][index]}deg` }}>
+                    <img src={`/images/process/${step.title.toLowerCase()}-card.png`} alt="" width="1086" height="1448" loading="lazy" />
+                    <div className="process-card-copy">
+                      <span className="process-card-number">{step.number}</span>
+                      <h3>{step.title}</h3>
+                      <p>{step.copy}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <p className="process-swipe-hint">Swipe to explore the four steps</p>
           </div>
         </section>
 
