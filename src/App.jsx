@@ -5,6 +5,7 @@ import { SplitText } from "gsap/SplitText";
 import ScrollExpand from "./ScrollExpand";
 import { setupServicesMotion } from "./servicesMotion";
 import { setupFinaleMotion } from "./finaleMotion";
+import { setupSmoothScroll } from "./smoothScroll";
 const GridScan = lazy(() => import("./GridScan"));
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -221,6 +222,9 @@ export default function App() {
   const [emailReady, setEmailReady] = useState(false);
   const [gridReady, setGridReady] = useState(false);
   const reduceMotion = quiet || systemReduced;
+  useEffect(() => {
+    if (!reduceMotion) return setupSmoothScroll();
+  }, [reduceMotion]);
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setSystemReduced(query.matches);

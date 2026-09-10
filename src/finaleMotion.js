@@ -27,7 +27,27 @@ export function setupFinaleMotion(root) {
     const start = origin.top + scroll - window.innerHeight * 0.2;
     const through = ending.bottom + scroll - window.innerHeight * 0.35;
     const end = ScrollTrigger.maxScroll(window);
+    const restingBounds = element => {
+      const rect = element.getBoundingClientRect();
+      const offsetX = Number(gsap.getProperty(element, "x")) || 0;
+      return { left: rect.left - offsetX, right: rect.right - offsetX,
+        top: rect.top + scroll, bottom: rect.bottom + scroll };
+    };
+    const rows = new Map();
+    studies.forEach(study => {
+      const rect = restingBounds(study);
+      // The layout determines the side, never the atom's moving position.
+      const side = (rect.left + rect.right) / 2 <= window.innerWidth / 2 ? "left" : "right";
+      const key = `${study.offsetTop}:${side}`;
+      const row = rows.get(key) || { side, items: [], rect: { ...rect } };
+      row.items.push(study);
+      row.rect.left = Math.min(row.rect.left, rect.left);
+      row.rect.right = Math.max(row.rect.right, rect.right);
+      rows.set(key, row);
+    });
     geometry = {
+      rows: [...rows.values()],
+      words: words.map(element => ({ element, side: element.dataset.side, rect: restingBounds(element) })),
       start, through, end, size,
       homeX: origin.left + origin.width / 2,
       homeY: origin.top + scroll + origin.height / 2,
@@ -45,33 +65,23 @@ export function setupFinaleMotion(root) {
     // Open over a generous approach distance, hold the narrow corridor while
     // the atom passes, then ease closed over the same distance in either direction.
     const transitionDistance = Math.max(180, window.innerHeight * 0.28);
-    const displacement = (rect, side, currentX) => {
-      const dy = Math.max(rect.top - y, y - rect.bottom, 0);
+    const displacement = (rect, side) => {
+      const worldY = y + window.scrollY;
+      const dy = Math.max(rect.top - worldY, worldY - rect.bottom, 0);
       const reach = radius + clearance;
       const opening = smooth((reach + transitionDistance - dy) / transitionDistance);
       const shift = side === "left"
-        ? Math.min(0, x - reach - (rect.right - currentX))
-        : Math.max(0, x + reach - (rect.left - currentX));
+        ? Math.min(0, x - reach - rect.right)
+        : Math.max(0, x + reach - rect.left);
       return shift * opening;
     };
-    words.forEach(word => {
-      const currentX = Number(gsap.getProperty(word, "x")) || 0;
-      gsap.set(word, { x: displacement(word.getBoundingClientRect(), word.dataset.side, currentX) });
+    geometry.words.forEach(({ element, rect, side }) => {
+      gsap.set(element, { x: displacement(rect, side) });
     });
-    // Move each side of a row together to preserve the spacing between tiles.
-    const rows = new Map();
-    studies.forEach(study => {
-      const rect = study.getBoundingClientRect();
-      const currentX = Number(gsap.getProperty(study, "x")) || 0;
-      const side = rect.left + rect.width / 2 - currentX <= x ? "left" : "right";
-      const key = `${study.offsetTop}:${side}`;
-      const row = rows.get(key) || { side, shift: 0, items: [] };
-      const shift = displacement(rect, side, currentX);
-      row.shift = side === "left" ? Math.min(row.shift, shift) : Math.max(row.shift, shift);
-      row.items.push(study);
-      rows.set(key, row);
+    // Cached row geometry avoids repeated layout reads during animation.
+    geometry.rows.forEach(({ items, rect, side }) => {
+      gsap.set(items, { x: displacement(rect, side) });
     });
-    rows.forEach(row => gsap.set(row.items, { x: row.shift }));
   }
 
   function render() {
