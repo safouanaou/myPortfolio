@@ -1,5 +1,9 @@
 # Editing the portfolio
 
+## Delivery preference
+
+After each completed change, validate it, commit and push to the existing GitHub repository, then deploy the validated build to the existing Cloudflare Worker with `npm run deploy`. The production domains are `www.safouanaouezghar.com` and `safouanaouezghar.com`, configured in `wrangler.jsonc`. Verify the published assets after deployment. This is the owner's standing instruction; do not request routine publishing confirmation again.
+
 The page is composed in `src/App.jsx`; visual rules are in `src/styles.css`. See `DESIGN.md` for the current design system. The first selected work is Bar César, a restaurant website concept supplied by Safouan. The other two selected-work entries remain placeholders. Do not fabricate clients, testimonials, results or case studies.
 
 ## Replace selected-work mockups

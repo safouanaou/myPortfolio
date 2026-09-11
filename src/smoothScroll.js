@@ -54,19 +54,23 @@ export function setupSmoothScroll() {
       Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
     const delta = event.deltaY * unit * 0.7;
-    // Let nested scroll regions (including textareas and the mobile deck) work normally.
-    for (const element of event.composedPath()) {
+    if (canScrollInside(event, delta)) { stop(); return; }
+    event.preventDefault();
+    enqueue(delta);
+  }
+
+  function canScrollInside(event, delta) {
+    return event.composedPath().some(element => {
       if (!(element instanceof HTMLElement) || element === document.body ||
-        element === document.documentElement) continue;
-      if (element.scrollHeight > element.clientHeight &&
+        element === document.documentElement) return false;
+      return element.scrollHeight > element.clientHeight &&
         /auto|scroll/.test(getComputedStyle(element).overflowY) &&
         (delta < 0 ? element.scrollTop > 0 :
-          element.scrollTop + element.clientHeight < element.scrollHeight - 1)) {
-        stop();
-        return;
-      }
-    }
-    event.preventDefault();
+          element.scrollTop + element.clientHeight < element.scrollHeight - 1);
+    });
+  }
+
+  function enqueue(delta) {
     if (!frame) target = window.scrollY;
     if (Math.sign(delta) !== Math.sign(target - window.scrollY)) {
       target = window.scrollY;
@@ -83,6 +87,38 @@ export function setupSmoothScroll() {
     }
   }
 
+  let touch = null;
+  function onTouchStart(event) {
+    stop();
+    const point = event.touches[0];
+    touch = event.touches.length === 1 &&
+      !event.target.closest("input, textarea, select, [contenteditable]")
+      ? { x: point.clientX, y: point.clientY, axis: null } : null;
+  }
+  function onTouchMove(event) {
+    if (!touch || event.touches.length !== 1 || !event.cancelable) {
+      touch = null;
+      stop();
+      return;
+    }
+    const point = event.touches[0];
+    const dx = touch.x - point.clientX;
+    const dy = touch.y - point.clientY;
+    if (!touch.axis && Math.max(Math.abs(dx), Math.abs(dy)) < 5) return;
+    touch.axis ||= Math.abs(dy) > Math.abs(dx) ? "y" : "x";
+    if (touch.axis === "x" || canScrollInside(event, dy)) {
+      touch = null;
+      stop();
+      return;
+    }
+    event.preventDefault();
+    touch.x = point.clientX;
+    touch.y = point.clientY;
+    enqueue(dy * 0.7);
+  }
+  function onTouchEnd() { touch = null; }
+  function onTouchCancel() { touch = null; stop(); }
+
   function onNativeScroll() {
     if (frame && Math.abs(window.scrollY - expectedY) > 1) stop();
   }
@@ -93,13 +129,19 @@ export function setupSmoothScroll() {
   window.addEventListener("scroll", onNativeScroll, { passive: true });
   window.addEventListener("keydown", onKey);
   window.addEventListener("pointerdown", stop, { passive: true });
-  window.addEventListener("touchstart", stop, { passive: true });
+  window.addEventListener("touchstart", onTouchStart, { passive: true });
+  window.addEventListener("touchmove", onTouchMove, { passive: false });
+  window.addEventListener("touchend", onTouchEnd, { passive: true });
+  window.addEventListener("touchcancel", onTouchCancel, { passive: true });
   return () => {
     stop();
     window.removeEventListener("wheel", onWheel);
     window.removeEventListener("scroll", onNativeScroll);
     window.removeEventListener("keydown", onKey);
     window.removeEventListener("pointerdown", stop);
-    window.removeEventListener("touchstart", stop);
+    window.removeEventListener("touchstart", onTouchStart);
+    window.removeEventListener("touchmove", onTouchMove);
+    window.removeEventListener("touchend", onTouchEnd);
+    window.removeEventListener("touchcancel", onTouchCancel);
   };
 }

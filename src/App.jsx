@@ -314,7 +314,9 @@ export default function App() {
         { rotation: -100, rotateY: -55, y: 90 },
         { rotation: 100, rotateY: 45, y: -70, ease: "none" },
       );
-      mm.add("(min-width: 761px)", () => {
+      mm.add("all", () => {
+        const chapterTrack = root.current.querySelector(".chapters");
+        chapterTrack.classList.add("chapters-animated");
         const chapters = gsap.utils.toArray(".work-chapter");
         gsap.set(chapters.slice(1), { yPercent: 100 });
         const timeline = gsap.timeline({
@@ -337,6 +339,9 @@ export default function App() {
                 i,
               ),
           );
+        return () => chapterTrack.classList.remove("chapters-animated");
+      });
+      mm.add("(min-width: 761px)", () => {
         gsap.to(".about-portrait img", {
           yPercent: 7,
           ease: "none",
@@ -350,6 +355,7 @@ export default function App() {
       });
       cleanupServices = setupServicesMotion(root.current);
       const process = root.current.querySelector(".process-section");
+      const processHeadingLines = process.querySelectorAll(".process-heading-line > span");
       const processCards = gsap.utils.toArray(".process-card");
       const cardEntranceDuration = 1.6;
       const cardEntranceStagger = 1.1;
@@ -359,19 +365,24 @@ export default function App() {
           trigger: process,
           start: "top top",
           end: "bottom bottom",
-          scrub: 0.65,
+          scrub: true,
           invalidateOnRefresh: true,
         },
       });
       processTimeline
-        .fromTo(".process-heading-line > span", { yPercent: 115, rotation: 3 }, {
-          yPercent: 0, rotation: 0, stagger: 0.12, duration: 0.8, ease: "power3.out",
+        // Finish the first line before revealing the serif line. Explicit
+        // visibility also prevents taller serif glyphs leaking out of the mask.
+        .fromTo(processHeadingLines[0], { yPercent: 115, autoAlpha: 0 }, {
+          yPercent: 0, autoAlpha: 1, force3D: true, duration: 0.6, ease: "power3.out",
         }, 0)
+        .fromTo(processHeadingLines[1], { yPercent: 115, autoAlpha: 0 }, {
+          yPercent: 0, autoAlpha: 1, force3D: true, duration: 0.6, ease: "power3.out",
+        }, 0.6)
         .fromTo(".process-heading-caption > p", { yPercent: 110 }, {
           yPercent: 0, duration: 0.65, ease: "power3.out",
-        }, 0.25)
+        }, 0.8)
         .to(".process-heading-line > span", {
-          yPercent: -120, rotation: -3, stagger: 0.08, duration: 0.6, ease: "power3.inOut",
+          yPercent: -120, stagger: 0.08, duration: 0.6, ease: "power3.inOut",
         }, 1.5)
         .to(".process-heading-caption > p", {
           yPercent: -120, duration: 0.45, ease: "power3.inOut",

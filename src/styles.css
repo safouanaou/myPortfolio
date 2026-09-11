@@ -1667,3 +1667,21 @@ html:has(.portfolio.reduced-motion) {
   .bundle-details { margin-top: 16px; }
   .bundle-terms { margin: 12px 0; }
 }
+
+/* Keep the same overlapping work sequence on touch screens. */
+@media (max-width: 760px) {
+  .chapters-animated { height: 300svh; }
+  .chapters-animated .chapter-stage {
+    height: 100svh;
+    min-height: 450px;
+    overflow: hidden;
+  }
+  .chapters-animated .work-chapter {
+    position: absolute;
+    height: 100%;
+  }
+}
+.process-section--animated .process-heading-line > span,
+.process-section--animated .process-heading-caption > p {
+  will-change: transform;
+}
